@@ -1,0 +1,35 @@
+const { SlashCommandBuilder } = require('@discordjs/builders');
+const { Promo } = require('../modals/promo');
+const { MessageEmbed } = require('discord.js');
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('scoreboard')
+    .setDescription('Display the top 10 users with the most promo credits'),
+  async execute(interaction) {
+    try {
+      // Retrieve the top 10 users with the most credits
+      const scoreboard = await Promo.findAll({
+        order: [['amount', 'DESC']],
+        limit: 10,
+      });
+
+      const embed = new MessageEmbed()
+        .setColor('#0099ff')
+        .setTitle('<:tittle:1110180039066140722> Promo Credit Scoreboard')
+        .setDescription('Top 10 users with the most promo credits.');
+
+      let response = '';
+      scoreboard.forEach((entry, index) => {
+        const user = interaction.client.users.cache.get(entry.customerId);
+        response += `**${index + 1}** - ${user?.toString() || 'Unknown User'}: ${entry.amount} credit${entry.amount !== 1 ? 's' : ''}\n`;
+      });
+
+      embed.addField('\u200B', response);
+      interaction.reply({ embeds: [embed] });
+    } catch (error) {
+      console.error('Error retrieving scoreboard:', error);
+      interaction.reply('An error occurred while retrieving the scoreboard. Please try again later.');
+    }
+  },
+};
